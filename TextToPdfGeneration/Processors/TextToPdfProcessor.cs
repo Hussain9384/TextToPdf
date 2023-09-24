@@ -20,10 +20,10 @@ namespace TextToPdfGeneration.Processors
         }
         public void Processor(string[] args) {
 
-            //if ( args.Length == 0 ) { Console.WriteLine("No input / outpur Arguments received to proceed!"); return; }
+            if ( args.Length == 0 ) { Console.WriteLine("No input / outpur Arguments received to proceed!"); return; }
 
-            var fileToProcess = args[0];  //"F://temp/pdf/text.txt"; 
-            var outputPath = args[1]; //"F://temp/pdf/"; 
+            var fileToProcess = args[0];
+            var outputPath = args[1];
 
             Console.WriteLine($"Processing file : {fileToProcess}");
             Console.WriteLine($"outputPath : {outputPath}");
@@ -34,8 +34,6 @@ namespace TextToPdfGeneration.Processors
 
             _pdfGenerator.GeneratePdfFiles(fileWithContents);
 
-            Console.WriteLine(args.Length);
-            Console.WriteLine(_configuration.FieldList.Length);
         }
 
         private string getFileName(IEnumerable<string> content)
