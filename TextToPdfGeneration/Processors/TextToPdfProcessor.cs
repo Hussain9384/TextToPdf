@@ -41,7 +41,7 @@ namespace TextToPdfGeneration.Processors
             var lookup = _configuration.OutputFileNameLookup;
             var lookupPosition = _configuration.FieldList.ToList().IndexOf(lookup);
 
-            return lookupPosition > 1 ? (GetTrimmedElement(content, lookupPosition)) : Guid.NewGuid().ToString();
+            return lookupPosition >= 0 ? (GetTrimmedElement(content, lookupPosition)) : Guid.NewGuid().ToString();
         }
 
         private string GetTrimmedElement(IEnumerable<string> content, int lookupPosition)
