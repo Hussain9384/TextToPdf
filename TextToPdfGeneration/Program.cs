@@ -1,6 +1,4 @@
 ﻿// See https://aka.ms/new-console-template for more information
-using iText.Commons.Actions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using TextToPdfGeneration.Interfaces;
@@ -21,7 +19,7 @@ var configStr = await File.ReadAllTextAsync("AppSettings.json");
 Config config = JsonConvert.DeserializeObject<Config>(configStr);
 
 services.AddSingleton<IFileOperations, FileOperations>()
-        .AddSingleton<IPdfGenerator, PdfGenerator>()
+        .AddSingleton<IWordDocGenerator, WordDocGenerator>()
         .AddSingleton<Config>(config)
         .AddSingleton<TextToPdfProcessor>();
 

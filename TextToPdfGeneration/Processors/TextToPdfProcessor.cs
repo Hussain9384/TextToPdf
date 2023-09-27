@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using System.Reflection;
 using TextToPdfGeneration.Interfaces;
 using TextToPdfGeneration.Models;
 
@@ -8,11 +9,11 @@ namespace TextToPdfGeneration.Processors
     {
         private readonly Config _configuration;
         private readonly IFileOperations _fileOperations;
-        private readonly IPdfGenerator _pdfGenerator;
+        private readonly IWordDocGenerator _pdfGenerator;
 
         public TextToPdfProcessor(Config configuration,
                                   IFileOperations fileOperations,
-                                  IPdfGenerator pdfGenerator )
+                                  IWordDocGenerator pdfGenerator )
         {
             _configuration = configuration;
             _fileOperations = fileOperations;
@@ -20,39 +21,30 @@ namespace TextToPdfGeneration.Processors
         }
         public void Processor(string[] args) {
 
-            if ( args.Length == 0 ) { Console.WriteLine("No input / outpur Arguments received to proceed!"); return; }
+           // if ( args.Length == 0 ) { Console.WriteLine("No input / outpur Arguments received to proceed!"); return; }
 
-            var fileToProcess = args[0];
-            var outputPath = args[1];
+            var fileToProcess = "F:\\Temp\\Word\\text.txt"; //args[0]; 
+            var outputPath = "F:\\Temp\\Word\\"; //args[1];
 
             Console.WriteLine($"Processing file : {fileToProcess}");
             Console.WriteLine($"outputPath : {outputPath}");
 
-            var linesToProcess = _fileOperations.ReadAllFileLines(fileToProcess);
+            var dataModels = _fileOperations.ConvertLinesToDataModels(fileToProcess);
 
-            IEnumerable<(string, IEnumerable<string>)> fileWithContents = linesToProcess.Select(s => (Path.Combine(outputPath,(getFileName(s))), s));
+            List<(string, DataModel)> fileNameAndContent = dataModels.Select(s => ( Path.Combine(outputPath,getFileName(s)), s)).ToList();
 
-            _pdfGenerator.GeneratePdfFiles(fileWithContents);
+            _pdfGenerator.GenerateWordDocument(fileNameAndContent);
 
         }
 
-        private string getFileName(IEnumerable<string> content)
+        private string getFileName(DataModel dataModel)
         {
             var lookup = _configuration.OutputFileNameLookup;
             var lookupPosition = _configuration.FieldList.ToList().IndexOf(lookup);
 
-            return lookupPosition >= 0 ? (GetTrimmedElement(content, lookupPosition)) : Guid.NewGuid().ToString();
-        }
+            var propertyInfo = dataModel.GetType().GetProperties().FirstOrDefault(s => s.Name == lookup);
 
-        private string GetTrimmedElement(IEnumerable<string> content, int lookupPosition)
-        {
-            var element = content.ElementAtOrDefault(lookupPosition);
-
-            if (string.IsNullOrWhiteSpace(element)) {
-                return Guid.NewGuid().ToString();
-            }
-
-            return element.Split(_configuration.Seperator).Last() + ".pdf";
+            return propertyInfo != null ? (propertyInfo.GetValue(dataModel)?.ToString() ?? Guid.NewGuid().ToString()) : Guid.NewGuid().ToString();
         }
     }
 }

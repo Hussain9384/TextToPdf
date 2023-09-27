@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Reflection;
 using TextToPdfGeneration.Interfaces;
 using TextToPdfGeneration.Models;
 
@@ -17,9 +13,9 @@ namespace TextToPdfGeneration.Processors
 
         public Config _configuration { get; }
 
-        public List<IEnumerable<string>> ReadAllFileLines(string filePath)
+        public List<DataModel> ConvertLinesToDataModels(string filePath)
         {
-            List<IEnumerable<string>> lines = new List<IEnumerable<string>>();
+            List<DataModel> dataModels = new List<DataModel>();
 
             if (string.IsNullOrWhiteSpace(filePath)) { Console.WriteLine($"Received empty filePath: {filePath}"); return null; }
 
@@ -29,15 +25,39 @@ namespace TextToPdfGeneration.Processors
 
             Parallel.ForEach(Rows, row => {
 
-                var listOfValues = row.Split(" ");
-
-                var formatedLines = _configuration.FieldList.Select((s, i) =>
-                string.Format(_configuration.PdfFileContentFormat, s, i <= listOfValues.Length ? listOfValues[i] : string.Empty));
-
-                lines.Add(formatedLines);
+                var listOfValues = row.Split(_configuration.Seperator);
+                dataModels.Add(MapToDataModel(listOfValues));
             });
 
-            return lines;
+            return dataModels;
+        }
+
+        private DataModel MapToDataModel(string[] listOfValues)
+        {
+            var dataModel = new DataModel();
+
+            var propertyValues = _configuration.FieldList.Select((s, i) => new { field = s, value = i < listOfValues.Length ? listOfValues[i] : string.Empty })
+                .ToDictionary(s => s.field, s => s.value);
+
+            Type objectType = dataModel.GetType();
+            PropertyInfo[] properties = objectType.GetProperties();
+
+            foreach (var property in properties)
+            {
+                if (propertyValues.TryGetValue(property.Name, out string value))
+                {
+                    if (property.PropertyType == value.GetType() || property.PropertyType.IsAssignableFrom(value.GetType()))
+                    {
+                        property.SetValue(dataModel, value);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Unable to set the property value for {property.Name}");
+                    }
+                }
+            }
+
+            return dataModel;
         }
     }
 }

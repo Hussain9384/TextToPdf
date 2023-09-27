@@ -7,8 +7,8 @@ using TextToPdfGeneration.Models;
 
 namespace TextToPdfGeneration.Interfaces
 {
-    internal interface IFileOperations
+    internal interface IWordDocGenerator
     {
-        public List<DataModel> ConvertLinesToDataModels(string filePath);
+        void GenerateWordDocument(IEnumerable<(string fileName, DataModel dataModel)> fileNameAndContents);
     }
 }
