@@ -1,8 +1,11 @@
-﻿using System.Reflection;
-using TextToPdfGeneration.Interfaces;
-using TextToPdfGeneration.Models;
+﻿using System.Collections.Concurrent;
+using System.IO.Compression;
+using System.Reflection;
+using TextToPdfGeneration.Helpers;
+using TextToWordGeneration.Interfaces;
+using TextToWordGeneration.Models;
 
-namespace TextToPdfGeneration.Processors
+namespace TextToWordGeneration.Processors
 {
     internal class FileOperations : IFileOperations
     {
@@ -13,13 +16,13 @@ namespace TextToPdfGeneration.Processors
 
         public Config _configuration { get; }
 
-        public List<DataModel> ConvertLinesToDataModels(string filePath)
+        public async Task<List<DataModel>> ConvertLinesToDataModels(string filePath)
         {
-            List<DataModel> dataModels = new List<DataModel>();
+            ConcurrentBag<DataModel> dataModels = new ConcurrentBag<DataModel>();
 
             if (string.IsNullOrWhiteSpace(filePath)) { Console.WriteLine($"Received empty filePath: {filePath}"); return null; }
 
-           string[] Rows = File.ReadAllLines(filePath);
+           string[] Rows = await File.ReadAllLinesAsync(filePath);
 
             if (Rows.Count() < 0) { Console.WriteLine($"Received empty file: {filePath}"); return null; }
 
@@ -29,7 +32,61 @@ namespace TextToPdfGeneration.Processors
                 dataModels.Add(MapToDataModel(listOfValues));
             });
 
-            return dataModels;
+            return dataModels.ToList();
+        }
+
+        public async Task WriteDataModelsAsCsv(string outputFilePath, IEnumerable<(string outputFilePath, DataModel model, bool status)> successfullRecords)
+        {
+            List<string> lines = new List<string>
+            {
+                string.Join(",", _configuration.MappingFieldList.Append<string>("OutputFile"))
+            };
+
+            foreach (var item in successfullRecords)
+            {
+                lines.Add(item.model.ConvertDataModelToString(_configuration, Path.GetFileName(item.outputFilePath), ","));
+            }
+
+            await File.WriteAllLinesAsync(Path.Combine(outputFilePath, $"{_configuration.MappingFileName}.csv"), lines.ToArray());
+        }
+
+        public void MoveAllFilesToZip(string sourceFolderPath, string zipFilePath)
+        {
+            try
+            {
+                if (!Directory.Exists(sourceFolderPath))
+                {
+                    Console.WriteLine("Source folder does not exist.");
+                }
+
+                using (FileStream zipStream = new FileStream(zipFilePath, FileMode.OpenOrCreate))
+                {
+                    using (ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Update))
+                    {
+                        AddFolderToZip(sourceFolderPath, archive, "");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error zipping folder: {ex.Message}");
+            }
+        }
+
+        private static void AddFolderToZip(string sourceFolderPath, ZipArchive archive, string folderPathInArchive)
+        {
+            foreach (string filePath in Directory.GetFiles(sourceFolderPath))
+            {
+                string entryName = Path.Combine(folderPathInArchive, Path.GetFileName(filePath));
+                archive.CreateEntryFromFile(filePath, entryName);
+            }
+
+            foreach (string subfolderPath in Directory.GetDirectories(sourceFolderPath))
+            {
+                string folderName = Path.GetFileName(subfolderPath);
+                string entryName = Path.Combine(folderPathInArchive, folderName);
+                AddFolderToZip(subfolderPath, archive, entryName);
+            }
         }
 
         private DataModel MapToDataModel(string[] listOfValues)

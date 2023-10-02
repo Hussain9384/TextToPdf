@@ -3,12 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TextToPdfGeneration.Models;
+using TextToWordGeneration.Models;
 
-namespace TextToPdfGeneration.Interfaces
+namespace TextToWordGeneration.Interfaces
 {
     internal interface IFileOperations
     {
-        public List<DataModel> ConvertLinesToDataModels(string filePath);
+        Task<List<DataModel>> ConvertLinesToDataModels(string filePath);
+
+        void MoveAllFilesToZip(string sourceFolderPath, string zipFilePath);
+
+        Task WriteDataModelsAsCsv(string outputFilePath, IEnumerable<(string outputFilePath, DataModel model, bool status)> successfullRecords);
     }
 }

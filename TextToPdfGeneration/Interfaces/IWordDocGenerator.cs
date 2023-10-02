@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TextToPdfGeneration.Models;
+using TextToWordGeneration.Models;
 
-namespace TextToPdfGeneration.Interfaces
+namespace TextToWordGeneration.Interfaces
 {
     internal interface IWordDocGenerator
     {
-        void GenerateWordDocument(IEnumerable<(string fileName, DataModel dataModel)> fileNameAndContents);
+        Task<List<(string, DataModel, bool)>> GenerateWordDocument(IEnumerable<(string fileName, DataModel dataModel)> fileNameAndContents);
     }
 }

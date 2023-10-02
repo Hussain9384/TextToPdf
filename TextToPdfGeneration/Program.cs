@@ -1,12 +1,9 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using TextToPdfGeneration.Interfaces;
-using TextToPdfGeneration.Models;
-using TextToPdfGeneration.Processors;
-
-
-Console.WriteLine("Hello, World!");
+using TextToWordGeneration.Interfaces;
+using TextToWordGeneration.Models;
+using TextToWordGeneration.Processors;
 
 var services = new ServiceCollection();
 
@@ -21,10 +18,10 @@ Config config = JsonConvert.DeserializeObject<Config>(configStr);
 services.AddSingleton<IFileOperations, FileOperations>()
         .AddSingleton<IWordDocGenerator, WordDocGenerator>()
         .AddSingleton<Config>(config)
-        .AddSingleton<TextToPdfProcessor>();
+        .AddSingleton<TextToWordProcessor>();
 
 var provider = services.BuildServiceProvider();
 
-var service = provider.GetService<TextToPdfProcessor>();
+var service = provider.GetService<TextToWordProcessor>();
 
 Task.Run(() => service.Processor(args)).GetAwaiter().GetResult();
